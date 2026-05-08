@@ -27,10 +27,12 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
+      delete data.creator
+
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || "No response"
+        result: data.result || data
       })
     }
 
@@ -54,10 +56,12 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
+      delete data.creator
+
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || "No response"
+        result: data.result || data
       })
     }
 
@@ -81,10 +85,12 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
+      delete data.creator
+
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || "No response"
+        result: data.result || data
       })
     }
 
@@ -92,16 +98,19 @@ async function handleRequest(request) {
     // PROXY LIST
     // ======================
     if (path === "/api/proxy/tools/proxy") {
+
       const response = await fetch(
         "https://xyron-rest-api.vercel.app/tools/proxy"
       )
 
       const data = await response.json()
 
+      delete data.creator
+
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data
+        result: data.result || data
       })
     }
 
@@ -109,16 +118,19 @@ async function handleRequest(request) {
     // RANDOM PROXY
     // ======================
     if (path === "/api/proxy/tools/proxy/random") {
+
       const response = await fetch(
         "https://xyron-rest-api.vercel.app/tools/proxy/random"
       )
 
       const data = await response.json()
 
+      delete data.creator
+
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data
+        result: data.result || data
       })
     }
 
