@@ -27,12 +27,10 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
-      delete data.creator
-
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || data
+        result: data.result || "No response"
       })
     }
 
@@ -56,12 +54,10 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
-      delete data.creator
-
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || data
+        result: data.result || "No response"
       })
     }
 
@@ -85,12 +81,10 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
-      delete data.creator
-
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || data
+        result: data.result || "No response"
       })
     }
 
@@ -105,12 +99,11 @@ async function handleRequest(request) {
 
       const data = await response.json()
 
-      delete data.creator
-
       return json({
         status: true,
         creator: "NightStrom404",
-        result: data.result || data
+        total: data.total || 0,
+        result: data.result || []
       })
     }
 
@@ -124,8 +117,6 @@ async function handleRequest(request) {
       )
 
       const data = await response.json()
-
-      delete data.creator
 
       return json({
         status: true,
