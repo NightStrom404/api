@@ -38,27 +38,29 @@ async function handleRequest(request) {
     // COPILOT
     // ======================
     if (path === "/api/proxy/copilot") {
-      const message = url.searchParams.get("message")
+  const message = url.searchParams.get("message")
 
-      if (!message) {
-        return json({
-          status: false,
-          creator: "NightStrom404",
-          error: "message required"
-        }, 400)
-      }
+  if (!message) {
+    return json({
+      status: false,
+      creator: "NightStrom404",
+      error: "message required"
+    }, 400)
+  }
 
-      const response = await fetch(
-        `https://xyron-rest-api.vercel.app/ai/copilot?message=${encodeURIComponent(message)}`
-      )
+  const prompt = `Kamu adalah Strom-Ai, AI cerdas, efisien, dan bersahabat yang dibuat oleh NightStrom404. Dalam setiap obrolan, panggillah dirimu 'Aku' dan panggillah pengguna dengan sebutan 'Kau'. Jawablah langsung ke inti masalah dengan bahasa Indonesia yang santai, akrab, dan rapi. Berikan penjelasan kode pemrograman yang terstruktur dengan baik jika diminta.`
 
-      const data = await response.json()
+  const response = await fetch(
+    `https://xyron-rest-api.vercel.app/ai/copilot?message=${encodeURIComponent(message)}&prompt=${encodeURIComponent(prompt)}`
+  )
 
-      return json({
-        status: true,
-        creator: "NightStrom404",
-        result: data.result || "No response"
-      })
+  const data = await response.json()
+
+  return json({
+    status: true,
+    creator: "NightStrom404",
+    result: data.result || "No response"
+  })
     }
 
     // ======================
@@ -154,4 +156,5 @@ function json(data, status = 200) {
       }
     }
   )
-}
+        }
+      
