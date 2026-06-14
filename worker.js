@@ -115,7 +115,7 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
     }
 
     // ======================
-    // EDIT FOTO
+    // EDIT FOTO (dengan User-Agent biar gak 403)
     // ======================
     if (path === "/api/proxy/editfoto") {
       const publicUrl = url.searchParams.get("url")
@@ -130,9 +130,14 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
       }
       
       const apiUrl = `https://api-faa.my.id/faa/editfoto?url=${encodeURIComponent(publicUrl)}&prompt=${encodeURIComponent(prompt)}`
+      
       const res = await fetch(apiUrl, { 
         method: "GET", 
-        headers: { "Accept": "image/*, application/json, */*" } 
+        headers: { 
+          "Accept": "image/*, application/json, */*",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://api-faa.my.id/"
+        } 
       })
       
       if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`)
@@ -159,7 +164,7 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
     }
 
     // ======================
-    // TEXT2IMG PRO
+    // TEXT2IMG PRO (dengan User-Agent + fallback Pollinations)
     // ======================
     if (path === "/api/proxy/text2img-pro") {
       const prompt = url.searchParams.get("prompt")
@@ -172,33 +177,64 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
         }, 400)
       }
       
-      const apiUrl = `https://api-faa.my.id/faa/ai-text2img-pro?prompt=${encodeURIComponent(prompt)}`
-      const res = await fetch(apiUrl, { 
-        method: "GET", 
-        headers: { "Accept": "image/*, application/json, */*" } 
-      })
-      
-      if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`)
-      
-      const contentType = res.headers.get("content-type") || ""
-      
-      if (contentType.includes("application/json")) { 
-        const jsonData = await res.json()
-        if (jsonData.url) return json({ status: true, creator: "NightStrom404", result: jsonData.url })
-        if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
-        if (jsonData.result) return json({ status: true, creator: "NightStrom404", result: jsonData.result })
-        if (jsonData.data && jsonData.data.url) return json({ status: true, creator: "NightStrom404", result: jsonData.data.url })
-        throw new Error(jsonData.error || "Unknown API response format")
+      // Coba API utama dulu (api-faa)
+      try {
+        const apiUrl = `https://api-faa.my.id/faa/ai-text2img-pro?prompt=${encodeURIComponent(prompt)}`
+        
+        const res = await fetch(apiUrl, { 
+          method: "GET", 
+          headers: { 
+            "Accept": "image/*, application/json, */*",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://api-faa.my.id/"
+          } 
+        })
+        
+        if (res.ok) {
+          const contentType = res.headers.get("content-type") || ""
+          
+          if (contentType.includes("application/json")) { 
+            const jsonData = await res.json()
+            if (jsonData.url) return json({ status: true, creator: "NightStrom404", result: jsonData.url })
+            if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
+            if (jsonData.result) return json({ status: true, creator: "NightStrom404", result: jsonData.result })
+            if (jsonData.data && jsonData.data.url) return json({ status: true, creator: "NightStrom404", result: jsonData.data.url })
+          }
+          
+          const buffer = await res.arrayBuffer()
+          const base64 = Buffer.from(buffer).toString("base64")
+          const mime = contentType.includes("image/") ? contentType.split(";")[0].trim() : "image/png"
+          
+          return json({
+            status: true,
+            creator: "NightStrom404",
+            result: `data:${mime};base64,${base64}`
+          })
+        }
+      } catch (e) {
+        // API utama gagal, lanjut ke fallback
       }
       
-      const buffer = await res.arrayBuffer()
-      const base64 = Buffer.from(buffer).toString("base64")
-      const mime = contentType.includes("image/") ? contentType.split(";")[0].trim() : "image/png"
+      // Fallback ke Pollinations.ai
+      const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`
+      
+      const fbRes = await fetch(fallbackUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+      })
+      
+      if (!fbRes.ok) throw new Error(`Fallback API Error: ${fbRes.status}`)
+      
+      const fbBuffer = await fbRes.arrayBuffer()
+      const fbBase64 = Buffer.from(fbBuffer).toString("base64")
+      const fbMime = fbRes.headers.get("content-type") || "image/jpeg"
       
       return json({
         status: true,
         creator: "NightStrom404",
-        result: `data:${mime};base64,${base64}`
+        source: "pollinations.ai",
+        result: `data:${fbMime};base64,${fbBase64}`
       })
     }
 
