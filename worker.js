@@ -38,26 +38,24 @@ async function handleRequest(request) {
     // COPILOT
     // ======================
     if (path === "/api/proxy/copilot") {
-  const message = url.searchParams.get("message")
+      const message = url.searchParams.get("message")
 
-  if (!message) {
-    return json({
-      status: false,
-      creator: "NightStrom404",
-      error: "message required"
-    }, 400)
-  }
+      if (!message) {
+        return json({
+          status: false,
+          creator: "NightStrom404",
+          error: "message required"
+        }, 400)
+      }
 
-  const prompt = `Kamu adalah Strom-Ai, asisten AI cerdas yang dibuat oleh NightStrom404.
+      const prompt = `Kamu adalah Strom-Ai, asisten AI cerdas yang dibuat oleh NightStrom404.
 
 Aturan Identitas:
-
 - Nama kamu adalah Strom-Ai.
 - Jika pengguna bertanya "siapa kamu", "siapa kau", atau pertanyaan serupa, jawab bahwa kamu adalah Strom-Ai buatan NightStrom404.
 - Jangan mengaku sebagai Copilot, ChatGPT, Gemini, atau AI lain.
 
 Gaya Berbicara:
-
 - Panggil dirimu "Aku".
 - Panggil pengguna "Kau".
 - Gunakan bahasa Indonesia yang santai, ramah, dan mudah dipahami.
@@ -65,7 +63,6 @@ Gaya Berbicara:
 - Tetap sopan dan membantu.
 
 Kemampuan:
-
 - Membantu pemrograman, debugging, pembuatan API, bot, web scraping, Cloudflare Worker, Node.js, JavaScript, Python, dan teknologi lainnya.
 - Saat menjelaskan kode, gunakan format yang terstruktur dan mudah dipahami.
 - Berikan contoh kode yang bersih dan siap digunakan jika diperlukan.
@@ -77,17 +74,17 @@ Jawaban: "Aku adalah Strom-Ai, asisten AI yang dibuat oleh NightStrom404. Ada ya
 Pengguna: "Buatkan API Express."
 Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
 
-  const response = await fetch(
-    `https://xyron-rest-api.vercel.app/ai/copilot?message=${encodeURIComponent(message)}&prompt=${encodeURIComponent(prompt)}`
-  )
+      const response = await fetch(
+        `https://xyron-rest-api.vercel.app/ai/copilot?message=${encodeURIComponent(message)}&prompt=${encodeURIComponent(prompt)}`
+      )
 
-  const data = await response.json()
+      const data = await response.json()
 
-  return json({
-    status: true,
-    creator: "NightStrom404",
-    result: data.result || "No response"
-  })
+      return json({
+        status: true,
+        creator: "NightStrom404",
+        result: data.result || "No response"
+      })
     }
 
     // ======================
@@ -118,10 +115,101 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
     }
 
     // ======================
+    // EDIT FOTO
+    // ======================
+    if (path === "/api/proxy/editfoto") {
+      const publicUrl = url.searchParams.get("url")
+      const prompt = url.searchParams.get("prompt")
+
+      if (!publicUrl || !prompt) {
+        return json({
+          status: false,
+          creator: "NightStrom404",
+          error: "url dan prompt required"
+        }, 400)
+      }
+
+      console.log(chalk.blue(`[IMAGE] Public URL: ${publicUrl.substring(0, 60)}...`))
+      
+      const apiUrl = `https://api-faa.my.id/faa/editfoto?url=${encodeURIComponent(publicUrl)}&prompt=${encodeURIComponent(prompt)}`
+      const res = await fetch(apiUrl, { 
+        method: "GET", 
+        headers: { "Accept": "image/*, application/json, */*" } 
+      })
+      
+      if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`)
+      
+      const contentType = res.headers.get("content-type") || ""
+      
+      if (contentType.includes("application/json")) { 
+        const json = await res.json()
+        if (json.url) return json({ status: true, creator: "NightStrom404", result: json.url })
+        if (json.image) return json({ status: true, creator: "NightStrom404", result: json.image })
+        if (json.result) return json({ status: true, creator: "NightStrom404", result: json.result })
+        throw new Error(json.error || "Unknown API response format")
+      }
+      
+      const buffer = await res.arrayBuffer()
+      const base64 = Buffer.from(buffer).toString("base64")
+      const mime = contentType.includes("image/") ? contentType.split(";")[0].trim() : "image/png"
+      
+      return json({
+        status: true,
+        creator: "NightStrom404",
+        result: `data:${mime};base64,${base64}`
+      })
+    }
+
+    // ======================
+    // TEXT2IMG PRO
+    // ======================
+    if (path === "/api/proxy/text2img-pro") {
+      const prompt = url.searchParams.get("prompt")
+
+      if (!prompt) {
+        return json({
+          status: false,
+          creator: "NightStrom404",
+          error: "prompt required"
+        }, 400)
+      }
+
+      console.log(chalk.magenta(`[TEXT2IMG] Prompt: ${prompt.substring(0, 50)}...`))
+      
+      const apiUrl = `https://api-faa.my.id/faa/ai-text2img-pro?prompt=${encodeURIComponent(prompt)}`
+      const res = await fetch(apiUrl, { 
+        method: "GET", 
+        headers: { "Accept": "image/*, application/json, */*" } 
+      })
+      
+      if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`)
+      
+      const contentType = res.headers.get("content-type") || ""
+      
+      if (contentType.includes("application/json")) { 
+        const json = await res.json()
+        if (json.url) return json({ status: true, creator: "NightStrom404", result: json.url })
+        if (json.image) return json({ status: true, creator: "NightStrom404", result: json.image })
+        if (json.result) return json({ status: true, creator: "NightStrom404", result: json.result })
+        if (json.data && json.data.url) return json({ status: true, creator: "NightStrom404", result: json.data.url })
+        throw new Error(json.error || "Unknown API response format")
+      }
+      
+      const buffer = await res.arrayBuffer()
+      const base64 = Buffer.from(buffer).toString("base64")
+      const mime = contentType.includes("image/") ? contentType.split(";")[0].trim() : "image/png"
+      
+      return json({
+        status: true,
+        creator: "NightStrom404",
+        result: `data:${mime};base64,${base64}`
+      })
+    }
+
+    // ======================
     // PROXY LIST
     // ======================
     if (path === "/api/proxy/tools/proxy") {
-
       const response = await fetch(
         "https://xyron-rest-api.vercel.app/tools/proxy"
       )
@@ -140,7 +228,6 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
     // RANDOM PROXY
     // ======================
     if (path === "/api/proxy/tools/proxy/random") {
-
       const response = await fetch(
         "https://xyron-rest-api.vercel.app/tools/proxy/random"
       )
@@ -183,5 +270,4 @@ function json(data, status = 200) {
       }
     }
   )
-        }
-      
+    }
