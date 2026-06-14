@@ -115,13 +115,13 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
     }
 
     // ======================
-    // EDIT FOTO (dengan User-Agent biar gak 403)
+    // EDIT FOTO (via xyron-rest-api)
     // ======================
     if (path === "/api/proxy/editfoto") {
-      const publicUrl = url.searchParams.get("url")
+      const imageUrl = url.searchParams.get("url")
       const prompt = url.searchParams.get("prompt")
 
-      if (!publicUrl || !prompt) {
+      if (!imageUrl || !prompt) {
         return json({
           status: false,
           creator: "NightStrom404",
@@ -129,14 +129,14 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
         }, 400)
       }
       
-      const apiUrl = `https://api-faa.my.id/faa/editfoto?url=${encodeURIComponent(publicUrl)}&prompt=${encodeURIComponent(prompt)}`
+      // Pake xyron-rest-api sebagai alternatif
+      const apiUrl = `https://xyron-rest-api.vercel.app/tools/img2img?url=${encodeURIComponent(imageUrl)}&prompt=${encodeURIComponent(prompt)}`
       
       const res = await fetch(apiUrl, { 
         method: "GET", 
         headers: { 
           "Accept": "image/*, application/json, */*",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": "https://api-faa.my.id/"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         } 
       })
       
@@ -144,14 +144,16 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
       
       const contentType = res.headers.get("content-type") || ""
       
+      // Jika response JSON (ada URL)
       if (contentType.includes("application/json")) { 
         const jsonData = await res.json()
         if (jsonData.url) return json({ status: true, creator: "NightStrom404", result: jsonData.url })
-        if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
         if (jsonData.result) return json({ status: true, creator: "NightStrom404", result: jsonData.result })
+        if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
         throw new Error(jsonData.error || "Unknown API response format")
       }
       
+      // Jika response langsung gambar
       const buffer = await res.arrayBuffer()
       const base64 = Buffer.from(buffer).toString("base64")
       const mime = contentType.includes("image/") ? contentType.split(";")[0].trim() : "image/png"
@@ -164,10 +166,14 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
     }
 
     // ======================
-    // TEXT2IMG PRO (dengan User-Agent + fallback Pollinations)
+    // TEXT2IMG PRO (via Pollinations.ai)
     // ======================
     if (path === "/api/proxy/text2img-pro") {
       const prompt = url.searchParams.get("prompt")
+      const width = url.searchParams.get("width") || "1024"
+      const height = url.searchParams.get("height") || "1024"
+      const seed = url.searchParams.get("seed") || Math.floor(Math.random() * 999999)
+      const model = url.searchParams.get("model") || "flux"
 
       if (!prompt) {
         return json({
@@ -177,64 +183,28 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
         }, 400)
       }
       
-      // Coba API utama dulu (api-faa)
-      try {
-        const apiUrl = `https://api-faa.my.id/faa/ai-text2img-pro?prompt=${encodeURIComponent(prompt)}`
-        
-        const res = await fetch(apiUrl, { 
-          method: "GET", 
-          headers: { 
-            "Accept": "image/*, application/json, */*",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://api-faa.my.id/"
-          } 
-        })
-        
-        if (res.ok) {
-          const contentType = res.headers.get("content-type") || ""
-          
-          if (contentType.includes("application/json")) { 
-            const jsonData = await res.json()
-            if (jsonData.url) return json({ status: true, creator: "NightStrom404", result: jsonData.url })
-            if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
-            if (jsonData.result) return json({ status: true, creator: "NightStrom404", result: jsonData.result })
-            if (jsonData.data && jsonData.data.url) return json({ status: true, creator: "NightStrom404", result: jsonData.data.url })
-          }
-          
-          const buffer = await res.arrayBuffer()
-          const base64 = Buffer.from(buffer).toString("base64")
-          const mime = contentType.includes("image/") ? contentType.split(";")[0].trim() : "image/png"
-          
-          return json({
-            status: true,
-            creator: "NightStrom404",
-            result: `data:${mime};base64,${base64}`
-          })
-        }
-      } catch (e) {
-        // API utama gagal, lanjut ke fallback
-      }
+      // Pollinations.ai - gratis, no auth, reliable
+      const apiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&model=${model}&nologo=true`
       
-      // Fallback ke Pollinations.ai
-      const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`
-      
-      const fbRes = await fetch(fallbackUrl, {
+      const res = await fetch(apiUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
       })
       
-      if (!fbRes.ok) throw new Error(`Fallback API Error: ${fbRes.status}`)
+      if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`)
       
-      const fbBuffer = await fbRes.arrayBuffer()
-      const fbBase64 = Buffer.from(fbBuffer).toString("base64")
-      const fbMime = fbRes.headers.get("content-type") || "image/jpeg"
+      const buffer = await res.arrayBuffer()
+      const base64 = Buffer.from(buffer).toString("base64")
+      const mime = res.headers.get("content-type") || "image/jpeg"
       
       return json({
         status: true,
         creator: "NightStrom404",
         source: "pollinations.ai",
-        result: `data:${fbMime};base64,${fbBase64}`
+        model: model,
+        seed: seed,
+        result: `data:${mime};base64,${base64}`
       })
     }
 
