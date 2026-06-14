@@ -128,8 +128,6 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
           error: "url dan prompt required"
         }, 400)
       }
-
-      console.log(chalk.blue(`[IMAGE] Public URL: ${publicUrl.substring(0, 60)}...`))
       
       const apiUrl = `https://api-faa.my.id/faa/editfoto?url=${encodeURIComponent(publicUrl)}&prompt=${encodeURIComponent(prompt)}`
       const res = await fetch(apiUrl, { 
@@ -142,11 +140,11 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
       const contentType = res.headers.get("content-type") || ""
       
       if (contentType.includes("application/json")) { 
-        const json = await res.json()
-        if (json.url) return json({ status: true, creator: "NightStrom404", result: json.url })
-        if (json.image) return json({ status: true, creator: "NightStrom404", result: json.image })
-        if (json.result) return json({ status: true, creator: "NightStrom404", result: json.result })
-        throw new Error(json.error || "Unknown API response format")
+        const jsonData = await res.json()
+        if (jsonData.url) return json({ status: true, creator: "NightStrom404", result: jsonData.url })
+        if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
+        if (jsonData.result) return json({ status: true, creator: "NightStrom404", result: jsonData.result })
+        throw new Error(jsonData.error || "Unknown API response format")
       }
       
       const buffer = await res.arrayBuffer()
@@ -173,8 +171,6 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
           error: "prompt required"
         }, 400)
       }
-
-      console.log(chalk.magenta(`[TEXT2IMG] Prompt: ${prompt.substring(0, 50)}...`))
       
       const apiUrl = `https://api-faa.my.id/faa/ai-text2img-pro?prompt=${encodeURIComponent(prompt)}`
       const res = await fetch(apiUrl, { 
@@ -187,12 +183,12 @@ Jawaban: Berikan kode lengkap dan penjelasan singkat yang jelas.`
       const contentType = res.headers.get("content-type") || ""
       
       if (contentType.includes("application/json")) { 
-        const json = await res.json()
-        if (json.url) return json({ status: true, creator: "NightStrom404", result: json.url })
-        if (json.image) return json({ status: true, creator: "NightStrom404", result: json.image })
-        if (json.result) return json({ status: true, creator: "NightStrom404", result: json.result })
-        if (json.data && json.data.url) return json({ status: true, creator: "NightStrom404", result: json.data.url })
-        throw new Error(json.error || "Unknown API response format")
+        const jsonData = await res.json()
+        if (jsonData.url) return json({ status: true, creator: "NightStrom404", result: jsonData.url })
+        if (jsonData.image) return json({ status: true, creator: "NightStrom404", result: jsonData.image })
+        if (jsonData.result) return json({ status: true, creator: "NightStrom404", result: jsonData.result })
+        if (jsonData.data && jsonData.data.url) return json({ status: true, creator: "NightStrom404", result: jsonData.data.url })
+        throw new Error(jsonData.error || "Unknown API response format")
       }
       
       const buffer = await res.arrayBuffer()
@@ -270,4 +266,4 @@ function json(data, status = 200) {
       }
     }
   )
-    }
+}
